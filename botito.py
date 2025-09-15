@@ -92,7 +92,7 @@ CHALLENGES = {
 
 La División INVESTIGACIÓN FEDERAL DE FUGITIVOS Y EXTRADICIONES es la escargada del dictado del curso: LA INVESTIGACIÓN FEDERAL EN LA BÚSQUEDA Y CAPTURA DE FUGITIVOS.
 
-🧠 Tu misión: Tu misión: Indicar la sigla de la fuerza a la que pertenece esta división.
+🧠 Tu misión: Indicar la sigla de la fuerza a la que pertenece esta división.
 
 📦 Envía la flag en el siguiente formato: `FLAG{PALABRA}` o `FLAG{PALABRA_PALABRA}`.
 

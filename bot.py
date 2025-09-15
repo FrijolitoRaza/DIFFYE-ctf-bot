@@ -863,14 +863,22 @@ async def post_shutdown_tasks(application: Application):
     await db_manager.close()
     logger.info("Conexión de la base de datos cerrada")
 
-def main():
+def main() -> None:
     """Función principal modificada"""
-    # Iniciar servidor dummy en hilo separado para Render
+
+    # Iniciar el bot en modo polling o webhook según el entorno
     if os.getenv('RENDER') or os.getenv('PORT'):
-        server_thread = threading.Thread(target=start_web_server)
-        server_thread.daemon = True
-        server_thread.start()
-        logger.info("Servidor dummy iniciado en hilo separado")
+        # For Render deployment, use webhook
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=int(os.getenv('PORT')),
+            url_path=BOT_TOKEN,
+            webhook_url=f"https://diffye-ctf-bot-1.onrender.com/{BOT_TOKEN}"
+        )
+    else:
+        # For local development, use polling
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
+
     # Crear la aplicación
     application = Application.builder().token(BOT_TOKEN).post_init(post_init_tasks).post_shutdown(post_shutdown_tasks).build()
     
