@@ -30,8 +30,8 @@ RUN useradd --create-home --shell /bin/bash appuser && \
     chown -R appuser:appuser /app
 USER appuser
 
-# Exponer puerto (aunque no se use en bots de Telegram con polling)
-EXPOSE 8000
+# Exponer puerto para Render
+EXPOSE $PORT
 
 # Comando de inicio
 CMD ["python", "bot.py"]

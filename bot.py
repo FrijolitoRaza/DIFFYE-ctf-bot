@@ -4,6 +4,10 @@
 DIFFYE-CTF Bot - Bot de Telegram para CTF de Búsqueda y Captura de Fugitivos
 """
 
+import threading
+import http.server
+import socketserver
+
 import os
 import logging
 from datetime import datetime, timedelta
@@ -70,7 +74,7 @@ La División INVESTIGACIÓN FEDERAL DE FUGITIVOS Y EXTRADICIONES es la escargada
 💡 Pista: La fuerza tiene jurisdicción nacional, viste de azul y su nombre completo incluye la palabra “Argentina”.
 
 ''',
-        'flag': 'FLAG{INICIO}',
+        'flag': 'FLAG{PFA}',
         'available_date': START_DATE - timedelta(days=1),  # Disponible antes del evento
         'material_link': None
     },
@@ -620,6 +624,36 @@ def main():
     
     # Manejador de errores
     application.add_error_handler(error_handler)
+    
+    # Iniciar el bot
+    logger.info("Bot iniciado correctamente")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+# Agregar al final de bot.py, antes de if __name__ == "__main__":
+
+def start_dummy_server():
+    """Servidor HTTP dummy para Render Web Service"""
+    port = int(os.getenv('PORT', 10000))
+    try:
+        handler = http.server.SimpleHTTPRequestHandler
+        httpd = socketserver.TCPServer(("", port), handler)
+        logger.info(f"Servidor dummy iniciado en puerto {port}")
+        httpd.serve_forever()
+    except Exception as e:
+        logger.error(f"Error en servidor dummy: {e}")
+
+def main():
+    """Función principal modificada"""
+    # Iniciar servidor dummy en hilo separado para Render
+    if os.getenv('RENDER'):  # Solo en producción
+        server_thread = threading.Thread(target=start_dummy_server)
+        server_thread.daemon = True
+        server_thread.start()
+    
+    # Crear la aplicación (tu código existente)
+    application = Application.builder().token(BOT_TOKEN).post_init(post_init_tasks).post_shutdown(post_shutdown_tasks).build()
+    
+    # ... resto de tu código igual ...
     
     # Iniciar el bot
     logger.info("Bot iniciado correctamente")
