@@ -866,21 +866,14 @@ async def post_shutdown_tasks(application: Application):
 def main() -> None:
     """Función principal modificada"""
 
-    # Iniciar el bot en modo polling o webhook según el entorno
-    if os.getenv('RENDER') or os.getenv('PORT'):
-        # For Render deployment, use webhook
-        application.run_webhook(
-            listen="0.0.0.0",
-            port=int(os.getenv('PORT')),
-            url_path=BOT_TOKEN,
-            webhook_url=f"https://diffye-ctf-bot-1.onrender.com/{BOT_TOKEN}"
-        )
-    else:
-        # For local development, use polling
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
-
     # Crear la aplicación
-    application = Application.builder().token(BOT_TOKEN).post_init(post_init_tasks).post_shutdown(post_shutdown_tasks).build()
+    application = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .post_init(post_init_tasks)
+        .post_shutdown(post_shutdown_tasks)
+        .build()
+    )
     
     # Manejador de conversación para envío de flags
     submit_handler = ConversationHandler(
@@ -891,7 +884,8 @@ def main() -> None:
         states={
             WAITING_FLAG: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_flag)]
         },
-        fallbacks=[CommandHandler('cancel', cancel)]
+        fallbacks=[CommandHandler('cancel', cancel)],
+        per_message=False # Explicitly set per_message to suppress the warning
     )
     
     # Agregar manejadores
@@ -916,9 +910,18 @@ def main() -> None:
     # Manejador de errores
     application.add_error_handler(error_handler)
     
-    # Iniciar el bot
-    logger.info("Bot iniciado correctamente")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    # Iniciar el bot en modo polling o webhook según el entorno
+    if os.getenv("RENDER") or os.getenv("PORT"):
+        logger.info("🚀 Bot iniciado con Webhook")
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=int(os.getenv("PORT", 8443)),
+            url_path=BOT_TOKEN,
+            webhook_url=f"{RENDER_URL}/{BOT_TOKEN}",
+        )
+    else:
+        logger.info("🤖 Bot iniciado con Polling")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
