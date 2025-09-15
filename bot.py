@@ -37,19 +37,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- VARIABLES DE ENTORNO ---
-# Asegúrate de configurar estas variables en tu archivo .env o en tu plataforma de hosting
+# Variables de entorno
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 DATABASE_URL = os.getenv('DATABASE_URL')
 ADMIN_IDS = os.getenv('ADMIN_IDS', '').split(',')
 TZ = pytz.timezone(os.getenv('TIMEZONE', 'America/Argentina/Buenos_Aires'))
 
-# --- VARIABLES PARA KEEP-ALIVE ---
-# La URL pública de tu aplicación (ej: https://mi-bot.onrender.com)
+# Variables para keep-alive
 RENDER_URL = os.getenv('RENDER_URL')
-# El intervalo en segundos para el auto-ping (14 minutos = 840 segundos)
 KEEP_ALIVE_INTERVAL = int(os.getenv('KEEP_ALIVE_INTERVAL', '840'))
-# El puerto que usará el servidor web
 PORT = int(os.getenv('PORT', 10000))
 
 # Fechas del evento
@@ -81,121 +77,38 @@ WAITING_NAME, WAITING_FLAG = range(2)
 #
 # Para que funcione, solo necesitas configurar la variable de entorno `RENDER_URL`.
 #
-# ====================================================================
 
 # ==================== SERVIDOR WEB CON KEEP-ALIVE ====================
 class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
     """Servidor HTTP mejorado para UptimeRobot y monitoreo"""
-
+    
     def log_message(self, format, *args):
         """Suprimir logs del servidor web para evitar spam"""
         return
-
+        
     def do_GET(self):
         if self.path == '/health':
-            # Endpoint principal para UptimeRobot
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-
-            response = {
-                'status': 'healthy',
-                'service': 'diffye-ctf-bot',
-                'timestamp': datetime.now(TZ).isoformat(),
-                'uptime': 'running',
-                'challenges_available': sum(1 for i in range(6) if is_challenge_available(i)),
-                'last_activity': activity_monitor.last_activity.isoformat() if activity_monitor.last_activity else None
-            }
-            self.wfile.write(str(response).replace("'", '"').encode())
-
-        elif self.path == '/ping':
-            # Endpoint simple para el auto-ping interno
-            self.send_response(200)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b'pong')
-
-        elif self.path == '/status':
-            # Endpoint con información detallada del estado del bot
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-
-            activity_status = activity_monitor.get_status()
-            response = {
-                'bot_status': 'active',
-                'timestamp': datetime.now(TZ).isoformat(),
-                'activity': activity_status,
-                'event_dates': {
-                    'start': START_DATE.isoformat(),
-                    'end': END_DATE.isoformat(),
-                    'current': datetime.now(TZ).isoformat()
-                }
-            }
+            response = {'status': 'healthy', 'service': 'diffye-ctf-bot', 'timestamp': datetime.now(TZ).isoformat()}
             self.wfile.write(str(response).replace("'", '"').encode())
-
         else:
-            # Página principal con información visual del estado
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
-
-            current_time = datetime.now(TZ)
-            available_challenges = sum(1 for i in range(6) if is_challenge_available(i))
-            activity_status = activity_monitor.get_status()
-
-            html_content = f"""
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>🔍 DIFFYE-CTF Bot</title>
-                <meta http-equiv="refresh" content="30">
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }}
-                    .container {{ max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-                    .status {{ color: green; font-weight: bold; }}
-                    .info {{ background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 10px 0; }}
-                    .endpoint {{ background: #f3e5f5; padding: 10px; margin: 5px 0; border-radius: 3px; font-family: monospace; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <h1>🔍 DIFFYE-CTF Bot</h1>
-                    <p>Estado: <span class="status">🟢 ACTIVO</span></p>
-
-                    <div class="info">
-                        <h3>📊 Información del Sistema</h3>
-                        <p><strong>Última actualización:</strong> {current_time.strftime('%d/%m/%Y %H:%M:%S %Z')}</p>
-                        <p><strong>Desafíos disponibles:</strong> {available_challenges}/6</p>
-                        <p><strong>Mensajes procesados:</strong> {activity_status['message_count']}</p>
-                        <p><strong>Última actividad:</strong> {activity_status['inactive_minutes']:.1f} min atrás</p>
-                        <p><strong>Evento:</strong> {START_DATE.strftime('%d/%m')} al {END_DATE.strftime('%d/%m/%Y')}</p>
-                    </div>
-
-                    <h3>🔗 Endpoints Disponibles</h3>
-                    <div class="endpoint">/health - Health check para UptimeRobot</div>
-                    <div class="endpoint">/ping - Ping simple</div>
-                    <div class="endpoint">/status - Estado detallado</div>
-
-                    <p><small>🤖 Servidor funcionando correctamente - Auto-refresh cada 30 segundos</small></p>
-                </div>
-            </body>
-            </html>
+            html_content = """
+            <!DOCTYPE html><html lang="es"><head><title>🔍 DIFFYE-CTF Bot</title></head>
+            <body><h1>🔍 DIFFYE-CTF Bot</h1><p>Estado: 🟢 ACTIVO</p>
+            <p><small>🤖 Servidor funcionando correctamente.</small></p></body></html>
             """
             self.wfile.write(html_content.encode('utf-8'))
 
 def start_web_server():
-    """Inicia el servidor web en un hilo separado para no bloquear el bot"""
+    """Inicia el servidor web para keep-alive"""
     try:
         httpd = socketserver.TCPServer(("", PORT), KeepAliveHandler)
         logger.info(f"🌐 Servidor web iniciado en puerto {PORT}")
-        logger.info(f"📡 Endpoints para UptimeRobot:")
-        logger.info(f"   - {RENDER_URL}/health (recomendado)")
-        logger.info(f"   - {RENDER_URL}/ping")
-        logger.info(f"   - {RENDER_URL}/status")
         httpd.serve_forever()
     except Exception as e:
         logger.error(f"❌ Error en servidor web: {e}")
@@ -459,6 +372,51 @@ Formato de respuesta: `FLAG{DEPOSITO}` o `FLAG{DEPOSITO_DEPOSITO}`
 }
 
 # ==================== COMANDOS PRINCIPALES (sin cambios) ====================
+@track_activity
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /start - Muestra el menú principal con botones"""
+    user = update.effective_user
+    user_name = sanitize_text(user.first_name)
+    
+    keyboard = [
+        [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
+        [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+        [InlineKeyboardButton("🏆 Ranking", callback_data="leaderboard")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(
+        f"🔍 ¡Hola {user_name}! Bienvenido al DIFFYE-CTF Bot 🤖\n\n"
+        "Selecciona una opción para comenzar.\n\n"
+        "Si es tu primera vez, asegúrate de inscribirte con el comando /register.",
+        reply_markup=reply_markup
+    )
+
+@track_activity
+async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /register - Registro de usuario"""
+    user = update.effective_user
+    
+    success = await Database.register_user(
+        user.id,
+        user.username or f"user_{user.id}",
+        user.full_name
+    )
+    
+    if success:
+        keyboard = [
+            [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
+            [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(
+            "✅ ¡Registro exitoso!\n\nYa puedes empezar a resolver los desafíos. ¡Buena suerte! 🕵️",
+            reply_markup=reply_markup
+        )
+    else:
+        await update.message.reply_text(
+            "⚠️ Ya estabas registrado. Puedes continuar con los desafíos usando los botones o el comando /challenges."
+        )
 
 @track_activity
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -598,23 +556,24 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # ... (código sin cambios)
     pass
 async def post_init_tasks(application: Application):
+    """Función de inicialización asíncrona para la base de datos"""
     await db_manager.initialize()
     await Database.init_db()
-    await keep_alive_service.start() # Inicia el keep-alive interno
-    logger.info("Base de datos y servicios inicializados")
-
+    logger.info("Base de datos inicializada correctamente")
+    
 async def post_shutdown_tasks(application: Application):
+    """Función para cerrar la conexión de la base de datos"""
     await db_manager.close()
-    await keep_alive_service.stop() # Detiene el keep-alive interno
-    logger.info("Conexiones y servicios cerrados")
+    logger.info("Conexión de la base de datos cerrada")
 
 def main() -> None:
-    # Iniciar el servidor web en un hilo separado
-    # Esto es crucial para que no bloquee el bot
+    """Función principal del bot"""
+
+    # Iniciar el servidor web en un hilo separado para el keep-alive
     web_server_thread = threading.Thread(target=start_web_server)
     web_server_thread.daemon = True
     web_server_thread.start()
-
+    
     # Crear la aplicación del bot
     application = (
         Application.builder()
@@ -623,7 +582,7 @@ def main() -> None:
         .post_shutdown(post_shutdown_tasks)
         .build()
     )
-
+    
     # Manejador de conversación para envío de flags
     submit_handler = ConversationHandler(
         entry_points=[
@@ -636,15 +595,31 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)],
         per_message=False
     )
-
-    # Agregar manejadores
+    
+    # <<< CAMBIO: Aseguramos que TODOS los manejadores estén registrados >>>
+    
+    # 1. Comandos
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("register", register))
     application.add_handler(CommandHandler("challenges", view_challenges))
-    # ... (resto de manejadores sin cambios)
+    application.add_handler(CommandHandler("progress", my_progress))
+    application.add_handler(CommandHandler("leaderboard", leaderboard))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("admin_stats", admin_stats))
+    
+    # 2. Botones (CallbackQueryHandlers) - ¡LA CLAVE DE LA SOLUCIÓN!
+    application.add_handler(CallbackQueryHandler(view_challenges, pattern="^view_challenges$"))
+    application.add_handler(CallbackQueryHandler(show_challenge_detail, pattern="^challenge_\d+$"))
+    application.add_handler(CallbackQueryHandler(my_progress, pattern="^my_progress$"))
+    application.add_handler(CallbackQueryHandler(leaderboard, pattern="^leaderboard$"))
+    application.add_handler(CallbackQueryHandler(main_menu, pattern="^main_menu$"))
+    
+    # 3. Conversación de /submit
     application.add_handler(submit_handler)
+    
+    # 4. Manejador de errores
     application.add_error_handler(error_handler)
-
+    
     # Iniciar el bot
     logger.info("🤖 Iniciando el bot...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
