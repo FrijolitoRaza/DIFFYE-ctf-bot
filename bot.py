@@ -657,7 +657,6 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Verificar la flag
     result = await Database.check_flag(user_id, challenge_id, flag)
     ####################################################################################################################################################################
-    result = await Database.check_flag(user_id, challenge_id, flag)
     
     keyboard = [[InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -867,8 +866,8 @@ async def post_shutdown_tasks(application: Application):
 def main():
     """Función principal modificada"""
     # Iniciar servidor dummy en hilo separado para Render
-    if os.getenv('RENDER') or os.getenv('PORT'):  # Detectar si estamos en Render
-        server_thread = threading.Thread(target=start_dummy_server)
+    if os.getenv('RENDER') or os.getenv('PORT'):
+        server_thread = threading.Thread(target=start_web_server)
         server_thread.daemon = True
         server_thread.start()
         logger.info("Servidor dummy iniciado en hilo separado")
