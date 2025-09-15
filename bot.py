@@ -345,45 +345,26 @@ La División INVESTIGACIÓN FEDERAL DE FUGITIVOS Y EXTRADICIONES es la escargada
         'material_link': None
     },
     1: {
-        'title': '🔦 Desafío 1 - Análisis de E-commerce',
-        'description': '''🛒 ANÁLISIS DE REGISTROS DE E-COMMERCE
+        'title': '📸 Desafío 1 - Redes Sociales',
+        'description': '''📱 ANÁLISIS DE INSTAGRAM
 
-Contexto: Un usuario realiza compras sospechosas en un portal de e-commerce.
-Varios ítems podrían corresponder a artículos comúnmente vinculados con actividades ilícitas.
+Contexto: Se monitorea el perfil de Instagram de un joven que reside en la Ciudad de Buenos Aires.
+Sus publicaciones contienen múltiples referencias a su barrio de residencia.
 
-Material disponible: Descargar archivo Excel desde el botón de abajo
+Material disponible: Ver perfil desde el botón de abajo
 
-Tu misión: Analiza los registros de compras y determina:
-¿Qué actividad ilegal puede inferirse a partir de las compras realizadas?
+Tu misión: Analiza las publicaciones y ubicaciones para determinar:
+¿En qué barrio reside el jovén?
 
-Formato de respuesta: `FLAG{ACTIVIDAD}` o `FLAG{ACTIVIDAD_ACTIVIDAD}`.
+Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`
 
-💡 Pista: Presta atención a los patrones de compra y las cantidades de ciertos artículos.
+💡 Pista: Los fondos de las fotos y los hashtags pueden revelar la ubicación.
 ''',
-        'flag': 'FLAG{DROGAS}',
-        'material_link': 'https://ejemplo.com/desafio1.xlsx'
+        'flag': 'FLAG{VILLA_URQUIZA}',
+        'material_link': 'https://www.instagram.com/gian.francomh/'
     },
     2: {
-        'title': '📞 Desafío 2 - Registros Telefónicos',
-        'description': '''📱 ANÁLISIS DE REGISTROS DE LLAMADAS
-
-Contexto: Se han obtenido los registros de llamadas de la esposa del prófugo.
-Los movimientos de antenas podrían permitir identificar su domicilio y recorridos regulares.
-
-Material disponible: Descargar archivo Excel desde el botón de abajo
-
-Tu misión: Analiza los patrones de conexión y determina:
-¿En qué barrio se encuentra el domicilio de la esposa del prófugo?
-
-Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`.
-
-💡 Pista: Las conexiones nocturnas suelen indicar el lugar de residencia.
-''',
-        'flag': 'FLAG{CABALLITO}',
-        'material_link': 'https://ejemplo.com/desafio2.xlsx'
-    },
-    3: {
-        'title': '🚗 Desafío 3 - Cámaras de Tránsito',
+        'title': '🚗 Desafío 2 - Cámaras de Tránsito',
         'description': '''🎥 ANÁLISIS DE MOVIMIENTOS VEHICULARES
 
 Contexto: Un vehículo de interés repite siempre los mismos recorridos,
@@ -399,26 +380,45 @@ Formato de respuesta: `FLAG{CALLE}` o `FLAG{CALLE_CALLE}`.
 💡 Pista: Busca cambios en el patrón regular de movimiento.
 ''',
         'flag': 'FLAG{AV_ÁLVAREZ_THOMAS}',
-        'material_link': 'https://ejemplo.com/desafio3.xlsx'
+        'material_link': 'https://docs.google.com/spreadsheets/d/1Vb3RNY0fa3pxY-QToCg1zIo539L0jfCG/edit?usp=drive_link&ouid=100147836674076127083&rtpof=true&sd=true'
+    },
+    3: {
+        'title': '📞 Desafío 3 - Registros Telefónicos',
+        'description': '''📱 ANÁLISIS DE REGISTROS DE LLAMADAS
+
+Contexto: Tenemos la tarea de analizar un registro de llamadas. Sabemos que es importante para la causa pero no tenemos más precisiones. 
+Los movimientos de antenas podrían permitir identificar su domicilio y recorridos regulares.
+
+Material disponible: Descargar archivo Excel desde el botón de abajo
+
+Tu misión: Analiza los patrones de conexión y determina:
+¿En qué barrio se encuentra el domicilio de la persona investigada?
+
+Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`.
+
+💡 Pista: Las conexiones nocturnas suelen indicar el lugar de residencia.
+''',
+        'flag': 'FLAG{CABALLITO}',
+        'material_link': 'https://docs.google.com/spreadsheets/d/1iz4hu39zfQT21QBRJudHi7_sHBt8-pCr/edit?usp=drive_link&ouid=100147836674076127083&rtpof=true&sd=true'
     },
     4: {
-        'title': '📸 Desafío 4 - Redes Sociales',
-        'description': '''📱 ANÁLISIS DE INSTAGRAM
+        'title': '🔦 Desafío 4 - Análisis de E-commerce',
+        'description': '''🛒 ANÁLISIS DE REGISTROS DE E-COMMERCE
 
-Contexto: Se monitorea el perfil de Instagram del hermano del prófugo.
-Sus publicaciones contienen múltiples referencias a su barrio de residencia.
+Contexto: Un usuario realiza numerosas compras en un portal de e-commerce.
+Varios ítems podrían corresponder a artículos comúnmente vinculados con actividades ilícitas. Debemos analizar en profundidad el registro.
 
-Material disponible: Ver perfil desde el botón de abajo
+Material disponible: Descargar archivo Excel desde el botón de abajo
 
-Tu misión: Analiza las publicaciones y ubicaciones para determinar:
-¿En qué barrio reside el hermano del prófugo?
+Tu misión: Analiza los registros de compras y determina:
+¿Qué actividad ilegal puede inferirse a partir de las compras realizadas?
 
-Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`
+Formato de respuesta: `FLAG{ACTIVIDAD}` o `FLAG{ACTIVIDAD_ACTIVIDAD}`.
 
-💡 Pista: Los fondos de las fotos y los hashtags pueden revelar la ubicación.
+💡 Pista: Presta atención a los patrones de compra y las cantidades de ciertos artículos.
 ''',
-        'flag': 'FLAG{URQUIZA}',
-        'material_link': 'https://www.instagram.com/gian.francomh/'
+        'flag': 'FLAG{DROGAS}',
+        'material_link': 'https://docs.google.com/spreadsheets/d/17stE1_x1FrUj08-oyAcvbDmYe9zB8C6tX_MyANgRF44/edit?usp=drive_link'
     },
     5: {
         'title': '🔗 Desafío 5 - La Conexión Final',
@@ -437,7 +437,7 @@ Formato de respuesta: `FLAG{DEPOSITO}` o `FLAG{DEPOSITO_DEPOSITO}`
 💡 Pista: El depósito aparece mencionado en múltiples fuentes.
 ''',
         'flag': 'FLAG{MAHALO_HERMANOS}',
-        'material_link': 'https://ejemplo.com/desafio5.xlsx'
+        'material_link': 'https://docs.google.com/spreadsheets/d/1LRWdPC1SgzmW47BWOnnWM0FmI2opxc4T33J5FxQN78w/edit?usp=drive_link'
     }
 }
 
