@@ -37,19 +37,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- VARIABLES DE ENTORNO ---
-# Asegúrate de configurar estas variables en tu archivo .env o en tu plataforma de hosting
+# Variables de entorno
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 DATABASE_URL = os.getenv('DATABASE_URL')
 ADMIN_IDS = os.getenv('ADMIN_IDS', '').split(',')
 TZ = pytz.timezone(os.getenv('TIMEZONE', 'America/Argentina/Buenos_Aires'))
 
-# --- VARIABLES PARA KEEP-ALIVE ---
-# La URL pública de tu aplicación (ej: https://mi-bot.onrender.com)
-RENDER_URL = os.getenv('RENDER_URL')
-# El intervalo en segundos para el auto-ping (14 minutos = 840 segundos)
-KEEP_ALIVE_INTERVAL = int(os.getenv('KEEP_ALIVE_INTERVAL', '840'))
-# El puerto que usará el servidor web
+# Variables para keep-alive
+RENDER_URL = os.getenv('RENDER_URL')  # https://tu-app.onrender.com
+KEEP_ALIVE_INTERVAL = int(os.getenv('KEEP_ALIVE_INTERVAL', '840'))  # 14 minutos
 PORT = int(os.getenv('PORT', 10000))
 
 # Fechas del evento
@@ -59,38 +55,14 @@ END_DATE = datetime.strptime(os.getenv('END_DATE', '2024-09-19'), '%Y-%m-%d').re
 # Estados de conversación
 WAITING_NAME, WAITING_FLAG = range(2)
 
-# ====================================================================
-# ========= EXPLICACIÓN DEL SISTEMA DE KEEP-ALIVE INTEGRADO ==========
-# ====================================================================
-#
-# El código ya tiene dos mecanismos para mantener el bot activo:
-#
-# 1.  **Servidor Web Externo**:
-#     -   Crea un pequeño servidor web que se ejecuta en paralelo a tu bot.
-#     -   Plataformas como Render ponen en "suspensión" los servicios que no reciben tráfico.
-#     -   Este servidor expone endpoints (como `/health`) que pueden ser monitoreados por
-#         servicios externos como **UptimeRobot**.
-#     -   Al configurar UptimeRobot para que haga una petición a tu `RENDER_URL/health`
-#         cada 5-15 minutos, mantienes el servicio activo y evitas que se suspenda.
-#
-# 2.  **Servicio de Keep-Alive Interno**:
-#     -   Como respaldo, el bot también se hace "auto-pings" a sí mismo cada 14 minutos.
-#     -   Utiliza la `RENDER_URL` para hacer una petición a su propio endpoint `/ping`.
-#     -   Esto asegura que, incluso si UptimeRobot falla, el bot intentará mantenerse
-#         activo por su cuenta.
-#
-# Para que funcione, solo necesitas configurar la variable de entorno `RENDER_URL`.
-#
-# ====================================================================
-
 # ==================== SERVIDOR WEB CON KEEP-ALIVE ====================
 class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
     """Servidor HTTP mejorado para UptimeRobot y monitoreo"""
-
+    
     def log_message(self, format, *args):
         """Suprimir logs del servidor web para evitar spam"""
         return
-
+        
     def do_GET(self):
         if self.path == '/health':
             # Endpoint principal para UptimeRobot
@@ -98,7 +70,7 @@ class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-
+            
             response = {
                 'status': 'healthy',
                 'service': 'diffye-ctf-bot',
@@ -108,20 +80,20 @@ class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
                 'last_activity': activity_monitor.last_activity.isoformat() if activity_monitor.last_activity else None
             }
             self.wfile.write(str(response).replace("'", '"').encode())
-
+            
         elif self.path == '/ping':
-            # Endpoint simple para el auto-ping interno
+            # Endpoint simple para ping/pong
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
             self.wfile.write(b'pong')
-
+            
         elif self.path == '/status':
-            # Endpoint con información detallada del estado del bot
+            # Endpoint detallado de estado
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-
+            
             activity_status = activity_monitor.get_status()
             response = {
                 'bot_status': 'active',
@@ -134,17 +106,17 @@ class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
                 }
             }
             self.wfile.write(str(response).replace("'", '"').encode())
-
+            
         else:
-            # Página principal con información visual del estado
+            # Página principal con auto-refresh
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
-
+            
             current_time = datetime.now(TZ)
             available_challenges = sum(1 for i in range(6) if is_challenge_available(i))
             activity_status = activity_monitor.get_status()
-
+            
             html_content = f"""
             <!DOCTYPE html>
             <html lang="es">
@@ -165,7 +137,7 @@ class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
                 <div class="container">
                     <h1>🔍 DIFFYE-CTF Bot</h1>
                     <p>Estado: <span class="status">🟢 ACTIVO</span></p>
-
+                    
                     <div class="info">
                         <h3>📊 Información del Sistema</h3>
                         <p><strong>Última actualización:</strong> {current_time.strftime('%d/%m/%Y %H:%M:%S %Z')}</p>
@@ -174,21 +146,28 @@ class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
                         <p><strong>Última actividad:</strong> {activity_status['inactive_minutes']:.1f} min atrás</p>
                         <p><strong>Evento:</strong> {START_DATE.strftime('%d/%m')} al {END_DATE.strftime('%d/%m/%Y')}</p>
                     </div>
-
+                    
                     <h3>🔗 Endpoints Disponibles</h3>
                     <div class="endpoint">/health - Health check para UptimeRobot</div>
                     <div class="endpoint">/ping - Ping simple</div>
                     <div class="endpoint">/status - Estado detallado</div>
-
+                    
                     <p><small>🤖 Servidor funcionando correctamente - Auto-refresh cada 30 segundos</small></p>
                 </div>
+                
+                <script>
+                    // Auto-refresh cada 30 segundos
+                    setTimeout(function() {{ 
+                        location.reload(); 
+                    }}, 30000);
+                </script>
             </body>
             </html>
             """
             self.wfile.write(html_content.encode('utf-8'))
 
 def start_web_server():
-    """Inicia el servidor web en un hilo separado para no bloquear el bot"""
+    """Inicia el servidor web para keep-alive"""
     try:
         httpd = socketserver.TCPServer(("", PORT), KeepAliveHandler)
         logger.info(f"🌐 Servidor web iniciado en puerto {PORT}")
@@ -202,33 +181,33 @@ def start_web_server():
 
 # ==================== KEEP-ALIVE INTERNO ====================
 class KeepAliveService:
-    """Servicio interno complementario para keep-alive (auto-ping)"""
-
+    """Servicio interno complementario para keep-alive"""
+    
     def __init__(self):
         self.running = False
         self.session = None
-
+        
     async def start(self):
         """Inicia el servicio de keep-alive interno"""
         if not RENDER_URL:
             logger.warning("⚠️ RENDER_URL no configurada, keep-alive interno deshabilitado")
             return
-
+            
         self.running = True
         self.session = aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=30)
         )
-
+        
         # Iniciar el loop de ping interno
         asyncio.create_task(self._ping_loop())
         logger.info(f"🔄 Keep-alive interno iniciado - ping cada {KEEP_ALIVE_INTERVAL} segundos")
-
+        
     async def stop(self):
         """Detiene el servicio de keep-alive"""
         self.running = False
         if self.session:
             await self.session.close()
-
+            
     async def _ping_loop(self):
         """Loop principal de ping interno (backup)"""
         while self.running:
@@ -238,12 +217,12 @@ class KeepAliveService:
             except Exception as e:
                 logger.error(f"❌ Error en keep-alive ping: {e}")
                 await asyncio.sleep(120)  # Esperar 2 minutos antes de reintentar
-
+                
     async def _ping_self(self):
         """Hace ping al propio servicio (backup de UptimeRobot)"""
         if not self.session or not RENDER_URL:
             return
-
+            
         try:
             ping_url = f"{RENDER_URL.rstrip('/')}/ping"
             async with self.session.get(ping_url) as response:
@@ -251,7 +230,7 @@ class KeepAliveService:
                     logger.info(f"✅ Keep-alive ping interno exitoso - {datetime.now(TZ).strftime('%H:%M:%S')}")
                 else:
                     logger.warning(f"⚠️ Keep-alive ping falló - Status: {response.status}")
-
+                    
         except asyncio.TimeoutError:
             logger.warning("⚠️ Keep-alive ping - Timeout")
         except Exception as e:
@@ -263,26 +242,27 @@ keep_alive_service = KeepAliveService()
 # ==================== MONITOR DE ACTIVIDAD ====================
 class ActivityMonitor:
     """Monitor de actividad del bot"""
-
+    
     def __init__(self):
         self.last_activity = datetime.now(TZ)
         self.message_count = 0
         self.start_time = datetime.now(TZ)
-
+        
     def record_activity(self):
         """Registra actividad del bot"""
         self.last_activity = datetime.now(TZ)
         self.message_count += 1
-
+        
+        # Log cada 25 mensajes para no llenar los logs
         if self.message_count % 25 == 0:
             logger.info(f"📈 Actividad del bot - Mensajes procesados: {self.message_count}")
-
+            
     def get_status(self):
         """Obtiene el estado de actividad"""
         current_time = datetime.now(TZ)
         inactive_minutes = (current_time - self.last_activity).total_seconds() / 60
         uptime_hours = (current_time - self.start_time).total_seconds() / 3600
-
+        
         return {
             'last_activity': self.last_activity.isoformat(),
             'message_count': self.message_count,
@@ -294,6 +274,7 @@ activity_monitor = ActivityMonitor()
 
 # ==================== FUNCIONES DEL BOT ====================
 
+# Función auxiliar para sanitizar texto
 def sanitize_text(text):
     """Sanitiza texto de usuario para evitar problemas con caracteres especiales"""
     if not text:
@@ -302,6 +283,7 @@ def sanitize_text(text):
     sanitized = sanitized.replace('`', "'").replace('~', '-').replace('>', ' ').replace('<', ' ')
     return sanitized[:50]
 
+# Funciones de fechas y disponibilidad
 def get_challenge_availability_date(challenge_id):
     """Calcula la fecha de disponibilidad de cada desafío"""
     if challenge_id == 0:
@@ -336,6 +318,7 @@ def get_time_until_unlock(challenge_id):
     else:
         return "menos de 1 minuto"
 
+# Decorator para registrar actividad
 def track_activity(func):
     """Decorator para registrar actividad del bot"""
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -343,7 +326,7 @@ def track_activity(func):
         return await func(update, context)
     return wrapper
 
-# ==================== DESAFÍOS (sin cambios) ====================
+# ==================== DESAFÍOS ====================
 CHALLENGES = {
     0: {
         'title': '🔍 Desafío Tutorial',
@@ -458,164 +441,432 @@ Formato de respuesta: `FLAG{DEPOSITO}` o `FLAG{DEPOSITO_DEPOSITO}`
     }
 }
 
-# ==================== COMANDOS PRINCIPALES (sin cambios) ====================
+# ==================== COMANDOS PRINCIPALES ====================
 
 @track_activity
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /start - Inicio del bot"""
     user = update.effective_user
     user_name = sanitize_text(user.first_name)
+    
+    current_time = datetime.now(TZ)
     available_challenges = sum(1 for i in range(6) if is_challenge_available(i))
+    
     await update.message.reply_text(
         f"🔍 ¡Bienvenido al DIFFYE-CTF Bot! 🔍\n\n"
         f"Hola {user_name}, soy el bot oficial del CTF de Búsqueda y Captura de Fugitivos.\n\n"
         f"📅 Evento: {START_DATE.strftime('%d/%m')} al {END_DATE.strftime('%d/%m/%Y')}\n"
         f"🎯 Objetivo: Resolver 6 desafíos de análisis de información\n"
         f"📊 Desafíos disponibles: {available_challenges}/6\n\n"
-        f"Para comenzar, usa /register.\n"
-        f"Si ya estás inscrito, usa /challenges."
+        f"Los desafíos se habilitan día a día durante el evento.\n\n"
+        f"Para comenzar, necesito registrarte en el sistema.\n"
+        f"Por favor, usa el comando /register para inscribirte.\n"
+        f"Si ya estás inscrito, elige el desafío disponible para hoy con el comando /challenges."
     )
 
 @track_activity
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Comando /register - Registro de usuario"""
     user = update.effective_user
+    
+    # Registrar en la base de datos
     success = await Database.register_user(
         user.id,
         user.username or f"user_{user.id}",
         user.full_name
     )
+    
     if success:
+        available_count = sum(1 for i in range(6) if is_challenge_available(i))
+        
         keyboard = [
             [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
-            [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")]
+            [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+            [InlineKeyboardButton("🏆 Ranking", callback_data="leaderboard")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
+        
         await update.message.reply_text(
-            f"✅ ¡Registro exitoso! ¡Buena suerte! 🕵️",
+            f"✅ ¡Registro exitoso!\n\n"
+            f"Ya estás inscrito en el CTF. Aquí tienes las opciones disponibles:\n\n"
+            f"• 📋 /challenges • Ver los desafíos disponibles ({available_count}/6)\n"
+            f"• 🚩 /submit • Enviar una flag\n"
+            f"• 📊 /progress • Ver tu progreso\n"
+            f"• 🏆 /leaderboard • Ver el ranking\n"
+            f"• ❓ /help • Ayuda y comandos\n\n"
+            f"¡Buena suerte en la investigación! 🕵️",
             reply_markup=reply_markup
         )
     else:
-        await update.message.reply_text("⚠️ Hubo un problema con el registro.")
+        await update.message.reply_text(
+            "⚠️ Hubo un problema con el registro. Por favor, contacta a un administrador."
+        )
 
 @track_activity
 async def view_challenges(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Muestra los desafíos disponibles"""
     query = update.callback_query if update.callback_query else None
     message = query.message if query else update.message
     user_id = update.effective_user.id
+    
+    # Obtener progreso del usuario
     progress = await Database.get_user_progress(user_id)
     completed = progress['completed_challenges'] if progress else []
+    
+    current_time = datetime.now(TZ)
+    
     text = "📋 DESAFÍOS DISPONIBLES\n" + "="*30 + "\n\n"
+    text += f"📅 Fecha actual: {current_time.strftime('%d/%m/%Y %H:%M')}\n\n"
+    
     keyboard = []
+    
     for challenge_id, challenge in CHALLENGES.items():
+        # Verificar disponibilidad
         is_available = is_challenge_available(challenge_id)
         is_completed = challenge_id in completed
-        if is_completed: status = "✅ Completado"
-        elif not is_available: status = f"🔒 Disponible el {get_challenge_availability_date(challenge_id).strftime('%d/%m')}"
-        else: status = "🔓 Disponible ahora"
-        text += f"{'✅' if is_completed else '🔒' if not is_available else '🔓'} {challenge['title']} - {status}\n"
+        availability_date = get_challenge_availability_date(challenge_id)
+        
+        # Determinar el estado
+        if is_completed:
+            status = "✅ Completado"
+            emoji = "✅"
+        elif not is_available:
+            time_left = get_time_until_unlock(challenge_id)
+            unlock_date = availability_date.strftime('%d/%m %H:%M')
+            status = f"🔒 Disponible: {unlock_date}"
+            if time_left:
+                status += f" (en {time_left})"
+            emoji = "🔒"
+        else:
+            status = "🔓 Disponible ahora"
+            emoji = "🔓"
+        
+        text += f"{emoji} {challenge['title']}\n"
+        text += f"   📅 Fecha: {availability_date.strftime('%d/%m')}\n"
+        text += f"   Estado: {status}\n\n"
+        
+        # Agregar botón si está disponible y no completado
         if is_available and not is_completed:
-            keyboard.append([InlineKeyboardButton(f"🎯 Ir al Desafío {challenge_id}", callback_data=f"challenge_{challenge_id}")])
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"🎯 Desafío {challenge_id}", 
+                    callback_data=f"challenge_{challenge_id}"
+                )
+            ])
+    
+    # Agregar información adicional sobre el cronograma
+    text += "\n📅 CRONOGRAMA DE LIBERACIÓN:\n"
+    text += f"• Tutorial: {get_challenge_availability_date(0).strftime('%d/%m')} (Pre-evento)\n"
+    for i in range(1, 6):
+        date = get_challenge_availability_date(i)
+        text += f"• Desafío {i}: {date.strftime('%d/%m')} (Día {i})\n"
+    
     keyboard.append([InlineKeyboardButton("🔙 Menú Principal", callback_data="main_menu")])
     reply_markup = InlineKeyboardMarkup(keyboard)
-    if query: await query.edit_message_text(text=text, reply_markup=reply_markup)
-    else: await message.reply_text(text=text, reply_markup=reply_markup)
+    
+    if query:
+        await query.answer()
+        await query.edit_message_text(text=text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text=text, reply_markup=reply_markup)
 
 @track_activity
 async def show_challenge_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Muestra el detalle de un desafío específico"""
     query = update.callback_query
     challenge_id = int(query.data.split('_')[1])
+    
     challenge = CHALLENGES[challenge_id]
+    
     keyboard = [
         [InlineKeyboardButton("🚩 Enviar Flag", callback_data=f"submit_{challenge_id}")],
         [InlineKeyboardButton("🔙 Ver Desafíos", callback_data="view_challenges")]
     ]
+    
     if challenge['material_link']:
         keyboard.insert(1, [InlineKeyboardButton("📥 Descargar Material", url=challenge['material_link'])])
+    
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text=challenge['description'], reply_markup=reply_markup)
+    
+    await query.answer()
+    await query.edit_message_text(
+        text=challenge['description'],
+        reply_markup=reply_markup
+    )
 
 @track_activity
 async def start_submit_with_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Inicia el proceso de envío de flag desde un callback con ID"""
     query = update.callback_query
     challenge_id = int(query.data.split('_')[1])
+    
     context.user_data['submitting_challenge'] = challenge_id
+    
+    await query.answer()
     await query.edit_message_text(
-        f"🚩 Enviar Flag para {CHALLENGES[challenge_id]['title']}.\n"
-        f"Formato: `FLAG{{PALABRA}}`\n"
+        f"🚩 Enviar Flag - {CHALLENGES[challenge_id]['title']}\n\n"
+        f"Por favor, envía tu flag en el siguiente formato:\n"
+        f"`FLAG{{PALABRA}}`\n\n"
+        f"Ejemplo: `FLAG{{EJEMPLO}}`\n\n"
         f"Envía /cancel para cancelar."
     )
+    
     return WAITING_FLAG
 
 @track_activity
 async def start_submit_from_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Inicia el proceso de envío de flag desde el comando /submit"""
+    current_date = datetime.now(TZ)
+    
     keyboard = []
-    for cid, c in CHALLENGES.items():
-        if is_challenge_available(cid):
-            keyboard.append([InlineKeyboardButton(f"🎯 {c['title']}", callback_data=f"submit_{cid}")])
+    text = "🚩 ENVIAR FLAG\n\nSelecciona el desafío al que quieres enviar una flag:\n\n"
+    
+    for challenge_id, challenge in CHALLENGES.items():
+        is_available = is_challenge_available(challenge_id)
+        if is_available:
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"🎯 Desafío {challenge_id}", 
+                    callback_data=f"submit_{challenge_id}"
+                )
+            ])
+    
     if not keyboard:
-        await update.message.reply_text("No hay desafíos disponibles para enviar flags.")
+        text = "No hay desafíos disponibles para enviar flags en este momento."
     else:
-        await update.message.reply_text("Selecciona el desafío:", reply_markup=InlineKeyboardMarkup(keyboard))
+        keyboard.append([InlineKeyboardButton("🔙 Menú Principal", callback_data="main_menu")])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await update.message.reply_text(text=text, reply_markup=reply_markup)
 
 @track_activity
 async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Procesa la flag enviada"""
     user_id = update.effective_user.id
     flag = update.message.text.strip()
     challenge_id = context.user_data.get('submitting_challenge')
+    
     if challenge_id is None:
-        await update.message.reply_text("⚠️ Sesión expirada. Usa /submit de nuevo.")
+        await update.message.reply_text(
+            "⚠️ Sesión expirada. Por favor, selecciona un desafío para enviar la flag.\n"
+            "Puedes hacerlo con el comando /submit."
+        )
         return ConversationHandler.END
+    
+    # Verificar la flag
     result = await Database.check_flag(user_id, challenge_id, flag)
+    ####################################################################################################################################################################
+    
     keyboard = [[InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    
     if result == 'correct':
-        await update.message.reply_text(f"✅ ¡FLAG CORRECTA! Has completado {CHALLENGES[challenge_id]['title']}.", reply_markup=reply_markup)
+        await update.message.reply_text(
+            f"✅ ¡FLAG CORRECTA!\n\n"
+            f"¡Excelente trabajo! Has completado el {CHALLENGES[challenge_id]['title']}.\n\n"
+            f"🎯 Continúa con el siguiente desafío.",
+            reply_markup=reply_markup
+        )
     elif result == 'already_completed':
-        await update.message.reply_text("ℹ️ Ya has completado este desafío.", reply_markup=reply_markup)
+        await update.message.reply_text(
+            f"ℹ️ Ya has completado este desafío anteriormente.",
+            reply_markup=reply_markup
+        )
+    elif result == 'incorrect':
+        await update.message.reply_text(
+            f"❌ FLAG INCORRECTA\n\n"
+            f"La flag enviada no es correcta. Revisa el desafío e intenta nuevamente.\n\n"
+            f"💡 Recuerda verificar el formato: `FLAG{{PALABRA}}`",
+            reply_markup=reply_markup
+        )
     else:
-        await update.message.reply_text("❌ FLAG INCORRECTA. Intenta de nuevo.", reply_markup=reply_markup)
+        await update.message.reply_text(
+            "⚠️ Hubo un error al procesar tu flag. Por favor, intenta nuevamente.",
+            reply_markup=reply_markup
+        )
+    
     context.user_data.pop('submitting_challenge', None)
     return ConversationHandler.END
 
 async def my_progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Muestra el progreso del usuario"""
+    query = update.callback_query if update.callback_query else None
+    message = query.message if query else update.message
+    user_id = update.effective_user.id
+    
+    progress = await Database.get_user_progress(user_id)
+    
+    if not progress or not progress['stats']:
+        text = "📊 MI PROGRESO\n\n⚠️ No estás registrado. Usa /register para inscribirte."
+    else:
+        stats = progress['stats']
+        completed = progress['completed_challenges']
+        
+        username = sanitize_text(stats['username'])
+        last_activity = stats['last_activity'].strftime('%d/%m %H:%M')
+        
+        text = f"📊 MI PROGRESO\n" + "="*30 + "\n\n"
+        text += f"👤 Usuario: {username}\n"
+        text += f"✅ Desafíos Completados: {stats['challenges_completed']}/6\n"
+        text += f"🎯 Intentos Totales: {stats['total_attempts']}\n"
+        text += f"📅 Última Actividad: {last_activity}\n\n"
+        
+        text += "Desafíos Completados:\n"
+        for c_id in completed:
+            text += f"• {CHALLENGES[c_id]['title']}\n"
+        
+        if stats['challenges_completed'] == 6:
+            text += "\n🏆 ¡FELICITACIONES! Has completado todos los desafíos."
+    
+    keyboard = [
+        [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
+        [InlineKeyboardButton("🏆 Ver Ranking", callback_data="leaderboard")],
+        [InlineKeyboardButton("🔙 Menú Principal", callback_data="main_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if query:
+        await query.answer()
+        await query.edit_message_text(text=text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text=text, reply_markup=reply_markup)
+
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Muestra el ranking de usuarios"""
+    query = update.callback_query if update.callback_query else None
+    message = query.message if query else update.message
+    
+    ranking = await Database.get_leaderboard()
+    
+    text = "🏆 RANKING TOP 10\n" + "="*30 + "\n\n"
+    
+    if not ranking:
+        text += "Aún no hay usuarios en el ranking.\n"
+    else:
+        medals = ["🥇", "🥈", "🥉"]
+        for i, user in enumerate(ranking):
+            medal = medals[i] if i < 3 else f"{i+1}."
+            username = sanitize_text(user['username'])
+            text += f"{medal} {username}\n"
+            text += f"   ✅ Desafíos: {user['challenges_completed']}/6\n"
+            text += f"   🎯 Intentos: {user['total_attempts']}\n\n"
+    
+    keyboard = [
+        [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+        [InlineKeyboardButton("🔙 Menú Principal", callback_data="main_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if query:
+        await query.answer()
+        await query.edit_message_text(text=text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text=text, reply_markup=reply_markup)
+
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Muestra el menú principal"""
+    query = update.callback_query
+    
+    keyboard = [
+        [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
+        [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+        [InlineKeyboardButton("🏆 Ranking", callback_data="leaderboard")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.answer()
+    await query.edit_message_text(
+        "🔍 DIFFYE-CTF Bot\n\n"
+        "Selecciona una opción del menú:",
+        reply_markup=reply_markup
+    )
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Comando /help - Muestra ayuda"""
+    help_text = """
+❓ AYUDA - DIFFYE-CTF Bot
+
+Comandos disponibles:
+• /start • Iniciar el bot
+• /register • Registrarse en el CTF
+• /challenges • Ver desafíos disponibles
+• /submit • Enviar una flag
+• /progress • Ver tu progreso
+• /leaderboard • Ver el ranking
+• /help • Ver esta ayuda
+
+¿Cómo participar?
+1. Regístrate con /register
+2. Revisa los desafíos con /challenges
+3. Descarga y analiza el material
+4. Envía las flags con /submit
+5. ¡Completa todos los desafíos!
+
+Formato de flags:
+Todas las flags siguen el formato: `FLAG{PALABRA}` o `FLAG{PALABRA_PALABRA}`
+
+¡Buena suerte! 🕵️
+"""
+    await update.message.reply_text(help_text)
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Cancela la operación actual"""
+    context.user_data.clear()
+    await update.message.reply_text("❌ Operación cancelada.")
+    return ConversationHandler.END
+
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Comando admin para ver estadísticas"""
+    user_id = str(update.effective_user.id)
+    
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("⛔ No tienes permisos para usar este comando.")
+        return
+    
+    try:
+        stats = await Database.get_admin_stats()
+        
+        text = "📊 ESTADÍSTICAS ADMINISTRATIVAS\n" + "="*30 + "\n\n"
+        text += f"👥 Usuarios Totales: {stats['total_users']}\n"
+        text += f"🔥 Activos (24h): {stats['active_users']}\n\n"
+        text += "Completados por Desafío:\n"
+        
+        for stat in stats['challenge_stats']:
+            challenge_name = CHALLENGES[stat['challenge_id']]['title']
+            text += f"• {challenge_name}: {stat['completions']} usuarios\n"
+        
+        await update.message.reply_text(text)
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo estadísticas admin: {e}")
+        await update.message.reply_text("⚠️ Error obteniendo estadísticas.")
+
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Maneja los errores del bot"""
+    logger.error(f"Update {update} caused error {context.error}")
+    
+    if update and update.effective_message:
+        await update.effective_message.reply_text(
+            "⚠️ Ha ocurrido un error. Por favor, intenta nuevamente más tarde."
+        )
+
+# Funciones de inicialización y cierre
 async def post_init_tasks(application: Application):
+    """Función de inicialización asíncrona para la base de datos"""
     await db_manager.initialize()
     await Database.init_db()
-    await keep_alive_service.start() # Inicia el keep-alive interno
-    logger.info("Base de datos y servicios inicializados")
-
+    logger.info("Base de datos inicializada correctamente")
+    
 async def post_shutdown_tasks(application: Application):
+    """Función para cerrar la conexión de la base de datos"""
     await db_manager.close()
-    await keep_alive_service.stop() # Detiene el keep-alive interno
-    logger.info("Conexiones y servicios cerrados")
+    logger.info("Conexión de la base de datos cerrada")
 
 def main() -> None:
-    # Iniciar el servidor web en un hilo separado
-    # Esto es crucial para que no bloquee el bot
-    web_server_thread = threading.Thread(target=start_web_server)
-    web_server_thread.daemon = True
-    web_server_thread.start()
+    """Función principal modificada"""
 
-    # Crear la aplicación del bot
+    # Crear la aplicación
     application = (
         Application.builder()
         .token(BOT_TOKEN)
@@ -623,7 +874,7 @@ def main() -> None:
         .post_shutdown(post_shutdown_tasks)
         .build()
     )
-
+    
     # Manejador de conversación para envío de flags
     submit_handler = ConversationHandler(
         entry_points=[
@@ -634,20 +885,43 @@ def main() -> None:
             WAITING_FLAG: [MessageHandler(filters.TEXT & ~filters.COMMAND, process_flag)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
-        per_message=False
+        per_message=False # Explicitly set per_message to suppress the warning
     )
-
+    
     # Agregar manejadores
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("register", register))
     application.add_handler(CommandHandler("challenges", view_challenges))
-    # ... (resto de manejadores sin cambios)
+    application.add_handler(CommandHandler("progress", my_progress))
+    application.add_handler(CommandHandler("leaderboard", leaderboard))
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("admin_stats", admin_stats))
+    
+    # Manejadores de callback
+    application.add_handler(CallbackQueryHandler(view_challenges, pattern="^view_challenges$"))
+    application.add_handler(CallbackQueryHandler(show_challenge_detail, pattern="^challenge_\d+$"))
+    application.add_handler(CallbackQueryHandler(my_progress, pattern="^my_progress$"))
+    application.add_handler(CallbackQueryHandler(leaderboard, pattern="^leaderboard$"))
+    application.add_handler(CallbackQueryHandler(main_menu, pattern="^main_menu$"))
+    
+    # Agregar el manejador de conversación
     application.add_handler(submit_handler)
+    
+    # Manejador de errores
     application.add_error_handler(error_handler)
-
-    # Iniciar el bot
-    logger.info("🤖 Iniciando el bot...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    
+    # Iniciar el bot en modo polling o webhook según el entorno
+    if os.getenv("RENDER") or os.getenv("PORT"):
+        logger.info("🚀 Bot iniciado con Webhook")
+        application.run_webhook(
+            listen="0.0.0.0",
+            port=int(os.getenv("PORT", 8443)),
+            url_path=BOT_TOKEN,
+            webhook_url=f"{RENDER_URL}/{BOT_TOKEN}",
+        )
+    else:
+        logger.info("🤖 Bot iniciado con Polling")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
