@@ -49,6 +49,31 @@ END_DATE = datetime.strptime(os.getenv('END_DATE', '2024-09-19'), '%Y-%m-%d').re
 # Estados de conversación
 WAITING_NAME, WAITING_FLAG = range(2)
 
+# Server dummy para web service
+def start_dummy_server():
+    """Servidor HTTP dummy para Render Web Service"""
+    port = int(os.getenv('PORT', 10000))
+    try:
+        class HealthHandler(http.server.SimpleHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == '/health':
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(b'{"status": "ok", "service": "diffye-ctf-bot"}')
+                else:
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(b'DIFFYE-CTF Bot is running!')
+        
+        httpd = socketserver.TCPServer(("", port), HealthHandler)
+        logger.info(f"Servidor dummy iniciado en puerto {port}")
+        httpd.serve_forever()
+    except Exception as e:
+        logger.error(f"Error en servidor dummy: {e}")
+
+
 # Función auxiliar para sanitizar texto de usuarios
 def sanitize_text(text):
     """Sanitiza texto de usuario para evitar problemas con caracteres especiales"""
@@ -587,7 +612,13 @@ async def post_shutdown_tasks(application: Application):
     logger.info("Conexión de la base de datos cerrada")
 
 def main():
-    """Función principal"""
+    """Función principal modificada"""
+    # Iniciar servidor dummy en hilo separado para Render
+    if os.getenv('RENDER') or os.getenv('PORT'):  # Detectar si estamos en Render
+        server_thread = threading.Thread(target=start_dummy_server)
+        server_thread.daemon = True
+        server_thread.start()
+        logger.info("Servidor dummy iniciado en hilo separado")
     # Crear la aplicación
     application = Application.builder().token(BOT_TOKEN).post_init(post_init_tasks).post_shutdown(post_shutdown_tasks).build()
     
@@ -628,37 +659,6 @@ def main():
     # Iniciar el bot
     logger.info("Bot iniciado correctamente")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
-
-# Agregar al final de bot.py, antes de if __name__ == "__main__":
-
-def start_dummy_server():
-    """Servidor HTTP dummy para Render Web Service"""
-    port = int(os.getenv('PORT', 10000))
-    try:
-        handler = http.server.SimpleHTTPRequestHandler
-        httpd = socketserver.TCPServer(("", port), handler)
-        logger.info(f"Servidor dummy iniciado en puerto {port}")
-        httpd.serve_forever()
-    except Exception as e:
-        logger.error(f"Error en servidor dummy: {e}")
-
-def main():
-    """Función principal modificada"""
-    # Iniciar servidor dummy en hilo separado para Render
-    if os.getenv('RENDER'):  # Solo en producción
-        server_thread = threading.Thread(target=start_dummy_server)
-        server_thread.daemon = True
-        server_thread.start()
-    
-    # Crear la aplicación (tu código existente)
-    application = Application.builder().token(BOT_TOKEN).post_init(post_init_tasks).post_shutdown(post_shutdown_tasks).build()
-    
-    # ... resto de tu código igual ...
-    
-    # Iniciar el bot
-    logger.info("Bot iniciado correctamente")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-
 
 if __name__ == "__main__":
     main()
