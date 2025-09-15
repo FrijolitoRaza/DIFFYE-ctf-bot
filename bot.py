@@ -535,25 +535,167 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 async def my_progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Muestra el progreso del usuario"""
+    query = update.callback_query if update.callback_query else None
+    message = query.message if query else update.message
+    user_id = update.effective_user.id
+    
+    progress = await Database.get_user_progress(user_id)
+    
+    if not progress or not progress['stats']:
+        text = "📊 MI PROGRESO\n\n⚠️ No estás registrado. Usa /register para inscribirte."
+    else:
+        stats = progress['stats']
+        completed = progress['completed_challenges']
+        
+        username = sanitize_text(stats['username'])
+        last_activity = stats['last_activity'].strftime('%d/%m %H:%M')
+        
+        text = f"📊 MI PROGRESO\n" + "="*30 + "\n\n"
+        text += f"👤 Usuario: {username}\n"
+        text += f"✅ Desafíos Completados: {stats['challenges_completed']}/6\n"
+        text += f"🎯 Intentos Totales: {stats['total_attempts']}\n"
+        text += f"📅 Última Actividad: {last_activity}\n\n"
+        
+        text += "Desafíos Completados:\n"
+        for c_id in completed:
+            text += f"• {CHALLENGES[c_id]['title']}\n"
+        
+        if stats['challenges_completed'] == 6:
+            text += "\n🏆 ¡FELICITACIONES! Has completado todos los desafíos."
+    
+    keyboard = [
+        [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
+        [InlineKeyboardButton("🏆 Ver Ranking", callback_data="leaderboard")],
+        [InlineKeyboardButton("🔙 Menú Principal", callback_data="main_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if query:
+        await query.answer()
+        await query.edit_message_text(text=text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text=text, reply_markup=reply_markup)
+
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Muestra el ranking de usuarios"""
+    query = update.callback_query if update.callback_query else None
+    message = query.message if query else update.message
+    
+    ranking = await Database.get_leaderboard()
+    
+    text = "🏆 RANKING TOP 10\n" + "="*30 + "\n\n"
+    
+    if not ranking:
+        text += "Aún no hay usuarios en el ranking.\n"
+    else:
+        medals = ["🥇", "🥈", "🥉"]
+        for i, user in enumerate(ranking):
+            medal = medals[i] if i < 3 else f"{i+1}."
+            username = sanitize_text(user['username'])
+            text += f"{medal} {username}\n"
+            text += f"   ✅ Desafíos: {user['challenges_completed']}/6\n"
+            text += f"   🎯 Intentos: {user['total_attempts']}\n\n"
+    
+    keyboard = [
+        [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+        [InlineKeyboardButton("🔙 Menú Principal", callback_data="main_menu")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if query:
+        await query.answer()
+        await query.edit_message_text(text=text, reply_markup=reply_markup)
+    else:
+        await message.reply_text(text=text, reply_markup=reply_markup)
+
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Muestra el menú principal"""
+    query = update.callback_query
+    
+    keyboard = [
+        [InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")],
+        [InlineKeyboardButton("📊 Mi Progreso", callback_data="my_progress")],
+        [InlineKeyboardButton("🏆 Ranking", callback_data="leaderboard")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await query.answer()
+    await query.edit_message_text(
+        "🔍 DIFFYE-CTF Bot\n\n"
+        "Selecciona una opción del menú:",
+        reply_markup=reply_markup
+    )
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Comando /help - Muestra ayuda"""
+    help_text = """
+❓ AYUDA - DIFFYE-CTF Bot
+
+Comandos disponibles:
+• /start • Iniciar el bot
+• /register • Registrarse en el CTF
+• /challenges • Ver desafíos disponibles
+• /submit • Enviar una flag
+• /progress • Ver tu progreso
+• /leaderboard • Ver el ranking
+• /help • Ver esta ayuda
+
+¿Cómo participar?
+1. Regístrate con /register
+2. Revisa los desafíos con /challenges
+3. Descarga y analiza el material
+4. Envía las flags con /submit
+5. ¡Completa todos los desafíos!
+
+Formato de flags:
+Todas las flags siguen el formato: `FLAG{PALABRA}` o `FLAG{PALABRA_PALABRA}`
+
+¡Buena suerte! 🕵️
+"""
+    await update.message.reply_text(help_text)
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Cancela la operación actual"""
+    context.user_data.clear()
+    await update.message.reply_text("❌ Operación cancelada.")
+    return ConversationHandler.END
+
 async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
-    pass
+    """Comando admin para ver estadísticas"""
+    user_id = str(update.effective_user.id)
+    
+    if user_id not in ADMIN_IDS:
+        await update.message.reply_text("⛔ No tienes permisos para usar este comando.")
+        return
+    
+    try:
+        stats = await Database.get_admin_stats()
+        
+        text = "📊 ESTADÍSTICAS ADMINISTRATIVAS\n" + "="*30 + "\n\n"
+        text += f"👥 Usuarios Totales: {stats['total_users']}\n"
+        text += f"🔥 Activos (24h): {stats['active_users']}\n\n"
+        text += "Completados por Desafío:\n"
+        
+        for stat in stats['challenge_stats']:
+            challenge_name = CHALLENGES[stat['challenge_id']]['title']
+            text += f"• {challenge_name}: {stat['completions']} usuarios\n"
+        
+        await update.message.reply_text(text)
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo estadísticas admin: {e}")
+        await update.message.reply_text("⚠️ Error obteniendo estadísticas.")
+
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ... (código sin cambios)
+    """Maneja los errores del bot"""
+    logger.error(f"Update {update} caused error {context.error}")
+    
+    if update and update.effective_message:
+        await update.effective_message.reply_text(
+            "⚠️ Ha ocurrido un error. Por favor, intenta nuevamente más tarde."
+        )
+
     pass
 async def post_init_tasks(application: Application):
     """Función de inicialización asíncrona para la base de datos"""
