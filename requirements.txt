@@ -1,0 +1,33 @@
+# DIFFYE-CTF Bot Requirements
+# Python 3.9+
+
+# Telegram Bot
+python-telegram-bot==20.7
+
+# Database
+psycopg2-binary==2.9.9
+psycopg2-pool==1.1
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Timezone handling
+pytz==2023.3.post1
+
+# Async support
+asyncio==3.4.3
+
+# Logging
+colorlog==6.8.0
+
+# Connection pooling
+asyncpg==0.29.0
+
+# Optional: For development
+ipython==8.18.1
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Optional: For production deployment
+gunicorn==21.2.0
+uvicorn==0.24.0
