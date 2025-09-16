@@ -309,7 +309,7 @@ Formato de respuesta: `FLAG{CALLE}` o `FLAG{CALLE_CALLE}`.
 
 💡 Pista: Busca cambios en el patrón regular de movimiento.
 ''',
-        'flag': 'FLAG{AV_ÁLVAREZ_THOMAS}',
+        'flag': 'FLAG{AV_ALVAREZ_THOMAS}',
         'material_link': 'https://docs.google.com/spreadsheets/d/1Vb3RNY0fa3pxY-QToCg1zIo539L0jfCG/edit?usp=drive_link&ouid=100147836674076127083&rtpof=true&sd=true'
     },
     3: {
