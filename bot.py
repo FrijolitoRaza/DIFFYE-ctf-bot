@@ -284,7 +284,7 @@ Sus publicaciones contienen múltiples referencias a su barrio de residencia.
 Material disponible: Ver perfil desde el botón de abajo
 
 Tu misión: Analiza las publicaciones y ubicaciones para determinar:
-¿En qué barrio reside el jovén?
+¿En qué barrio reside el joven?
 
 Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`
 
