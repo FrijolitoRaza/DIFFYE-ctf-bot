@@ -358,6 +358,16 @@ class Database:
             logger.error(f"Error obteniendo estadísticas admin: {e}")
             return {'total_users': 0, 'active_users': 0, 'challenge_stats': []}
 
+@classmethod
+async def get_all_users(cls):
+    """Obtiene todos los usuarios registrados para mensajes circulares"""
+    try:
+        query = "SELECT user_id, username, full_name FROM users ORDER BY created_at"
+        result = await db_manager.fetch_all(query)
+        return result
+    except Exception as e:
+        logger.error(f"Error obteniendo todos los usuarios: {e}")
+        return []
 # Ejemplo de uso en un script
 async def main():
     """Función principal para inicializar y usar el manejador"""
