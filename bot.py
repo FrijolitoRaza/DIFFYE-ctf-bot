@@ -491,11 +491,11 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # MODIFICACIÓN: Verificar flag contra lista de opciones válidas
     challenge = CHALLENGES[challenge_id]
     flag_list = challenge['flag'] if isinstance(challenge['flag'], list) else [challenge['flag']]
-    
+
     is_correct = flag.upper() in [f.upper() for f in flag_list]
-    
+
     if is_correct:
-        result = await Database.check_flag(user_id, challenge_id, flag)
+        result = await Database.check_flag(user_id, challenge_id, flag_list[0])
         
         keyboard = [[InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -544,7 +544,8 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ FLAG INCORRECTA. Intenta de nuevo.", reply_markup=reply_markup)
     else:
-        await Database.record_attempt(user_id, challenge_id, flag, False)
+        # Registrar intento fallido usando check_flag que ya maneja los intentos
+        await Database.check_flag(user_id, challenge_id, flag)
         keyboard = [[InlineKeyboardButton("📋 Ver Desafíos", callback_data="view_challenges")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text("❌ FLAG INCORRECTA. Intenta de nuevo.", reply_markup=reply_markup)

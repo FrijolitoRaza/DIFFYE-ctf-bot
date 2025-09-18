@@ -242,7 +242,14 @@ class Database:
             # Obtener la flag correcta (esto debería venir de una configuración)
             # Por ahora usamos una lógica simple
             from bot import CHALLENGES
-            is_correct = CHALLENGES[challenge_id]['flag'].upper() == flag.upper()
+            challenge_flags = CHALLENGES[challenge_id]['flag']
+
+            # Manejar tanto listas como strings
+            if isinstance(challenge_flags, list):
+                is_correct = flag.upper() in [f.upper() for f in challenge_flags]
+            else:
+                is_correct = challenge_flags.upper() == flag.upper()
+            #is_correct = CHALLENGES[challenge_id]['flag'].upper() == flag.upper()
             
             # Registrar el intento
             await db_manager.execute_command('''
@@ -358,17 +365,17 @@ class Database:
             logger.error(f"Error obteniendo estadísticas admin: {e}")
             return {'total_users': 0, 'active_users': 0, 'challenge_stats': []}
 
-@classmethod
-async def get_all_users(cls):
+
+@staticmethod
+async def get_all_users():
     """Obtiene todos los usuarios registrados para mensajes circulares"""
     try:
-        query = "SELECT user_id, username, full_name FROM users ORDER BY created_at"
-        result = await db_manager.fetch_all(query)
+        query = "SELECT user_id, username, full_name FROM users ORDER BY registration_date"
+        result = await db_manager.execute_query(query)
         return result
     except Exception as e:
         logger.error(f"Error obteniendo todos los usuarios: {e}")
-        return []
-# Ejemplo de uso en un script
+        return []# Ejemplo de uso en un script
 async def main():
     """Función principal para inicializar y usar el manejador"""
     try:
