@@ -319,7 +319,7 @@ class Database:
         """Obtiene el ranking de usuarios"""
         try:
             return await db_manager.execute_query('''
-                SELECT u.username, s.challenges_completed, s.total_attempts,
+                SELECT u.full_name, s.challenges_completed, s.total_attempts,
                          MIN(p.submission_date) as first_completion
                 FROM users u
                 JOIN statistics s ON u.user_id = s.user_id

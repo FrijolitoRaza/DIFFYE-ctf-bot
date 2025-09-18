@@ -597,7 +597,7 @@ async def my_progress(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text(text=text, reply_markup=reply_markup)
 
 async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Muestra el ranking de usuarios MODIFICADO - Ordenado por desafíos completados y menor cantidad de intentos"""
+    """Muestra el ranking de usuarios - Ordenado por desafíos completados y menor cantidad de intentos"""
     query = update.callback_query if update.callback_query else None
     message = query.message if query else update.message
     
@@ -615,8 +615,8 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
         medals = ["🥇", "🥈", "🥉"]
         for i, user in enumerate(ranking[:10]):  # Limitar a top 10
             medal = medals[i] if i < 3 else f"{i+1}."
-            username = sanitize_text(user['username'])
-            text += f"{medal} {username}\n"
+            full_name = sanitize_text(user['full_name']) 
+            text += f"{medal} {full_name}\n"  
             text += f"   ✅ Desafíos: {user['challenges_completed']}/6\n"
             text += f"   🎯 Intentos: {user['total_attempts']}\n\n"
     
