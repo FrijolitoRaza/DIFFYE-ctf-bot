@@ -320,18 +320,19 @@ class Database:
         try:
             return await db_manager.execute_query('''
                 SELECT u.full_name, s.challenges_completed, s.total_attempts,
-                         MIN(p.submission_date) as first_completion
+                        MIN(p.submission_date) as first_completion
                 FROM users u
                 JOIN statistics s ON u.user_id = s.user_id
                 LEFT JOIN progress p ON u.user_id = p.user_id AND p.is_correct = TRUE
                 WHERE s.challenges_completed > 0
-                GROUP BY u.username, s.challenges_completed, s.total_attempts
+                GROUP BY u.full_name, s.challenges_completed, s.total_attempts
                 ORDER BY s.challenges_completed DESC, first_completion ASC
                 LIMIT 10
             ''')
         except Exception as e:
             logger.error(f"Error obteniendo leaderboard: {e}")
             return []
+    
     
     @staticmethod
     async def get_admin_stats() -> Dict:
