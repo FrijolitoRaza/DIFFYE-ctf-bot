@@ -761,15 +761,17 @@ async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"— {admin_name}\n"
         f"🕐 {datetime.now(TZ).strftime('%d/%m/%Y %H:%M')}"
     )
-    
+
+
+    # Obtener todos los usuarios registrados
     try:
-        # Obtener todos los usuarios registrados
         all_users = await Database.get_all_users()
+        logger.info(f"Usuarios obtenidos para broadcast: {len(all_users) if all_users else 0}")
         
         if not all_users:
             await update.message.reply_text("❌ No hay usuarios registrados para enviar el mensaje.")
             return
-        
+
         # Confirmar antes de enviar
         keyboard = [
             [InlineKeyboardButton("✅ Confirmar Envío", callback_data=f"confirm_broadcast")],
@@ -787,10 +789,11 @@ async def broadcast_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "¿Confirmas el envío?",
             reply_markup=reply_markup
         )
-        
+
     except Exception as e:
-        logger.error(f"Error preparando broadcast: {e}")
-        await update.message.reply_text("❌ Error preparando el mensaje circular.")
+        logger.error(f"Error obteniendo usuarios para broadcast: {e}")
+        await update.message.reply_text("❌ Error obteniendo la lista de usuarios.")
+        return
 
 @track_activity
 async def confirm_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):

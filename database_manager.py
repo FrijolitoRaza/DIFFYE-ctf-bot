@@ -365,18 +365,19 @@ class Database:
         except Exception as e:
             logger.error(f"Error obteniendo estadísticas admin: {e}")
             return {'total_users': 0, 'active_users': 0, 'challenge_stats': []}
+    
+    @staticmethod
+    async def get_all_users():
+        """Obtiene todos los usuarios registrados para mensajes circulares"""
+        try:
+            query = "SELECT user_id, username, full_name FROM users WHERE is_active = TRUE ORDER BY registration_date"
+            result = await db_manager.execute_query(query)  # Método correcto
+            return result
+        except Exception as e:
+            logger.error(f"Error obteniendo todos los usuarios: {e}")
+            return []
 
 
-@staticmethod
-async def get_all_users():
-    """Obtiene todos los usuarios registrados para mensajes circulares"""
-    try:
-        query = "SELECT user_id, username, full_name FROM users ORDER BY registration_date"
-        result = await db_manager.execute_query(query)
-        return result
-    except Exception as e:
-        logger.error(f"Error obteniendo todos los usuarios: {e}")
-        return []# Ejemplo de uso en un script
 async def main():
     """Función principal para inicializar y usar el manejador"""
     try:
