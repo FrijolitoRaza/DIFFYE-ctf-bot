@@ -354,8 +354,11 @@ Formato de respuesta: `FLAG{ACTIVIDAD}` o `FLAG{ACTIVIDAD_ACTIVIDAD}`.
         'title': '🔗 Desafío 5 - La Conexión Final',
         'description': '''🎯 INTEGRACIÓN DE FUENTES
 
-Contexto: Los análisis previos han revelado conexiones entre los distintos actores.
-Nuevos requerimientos judiciales proporcionaron información adicional crucial.
+Contexto: Los análisis previos han revelado vínculos entre los actores investigados. Nuevos requerimientos judiciales aportaron información clave, incluyendo:
+- Registro de llamadas del prófugo.
+- Historial de compras de su principal colaborador.
+- Imágenes de tránsito vinculadas a un socio del buscado.
+- Perfil de Instagram del hermano del requerido, disponible para análisis complementario.
 
 Material disponible: Descargar archivo Excel desde el botón de abajo
 
