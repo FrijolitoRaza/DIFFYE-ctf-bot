@@ -319,14 +319,13 @@ class Database:
         """Obtiene el ranking de usuarios"""
         try:
             return await db_manager.execute_query('''
-                SELECT u.full_name, s.challenges_completed, s.total_attempts,
-                        MIN(p.submission_date) as first_completion
+                SELECT u.full_name, s.challenges_completed, s.total_attempts
                 FROM users u
                 JOIN statistics s ON u.user_id = s.user_id
                 LEFT JOIN progress p ON u.user_id = p.user_id AND p.is_correct = TRUE
                 WHERE s.challenges_completed > 0
                 GROUP BY u.full_name, s.challenges_completed, s.total_attempts
-                ORDER BY s.challenges_completed DESC, first_completion ASC
+                ORDER BY s.challenges_completed desc, s.total_attempts asc
                 LIMIT 10
             ''')
         except Exception as e:
