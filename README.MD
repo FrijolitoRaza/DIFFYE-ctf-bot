@@ -67,7 +67,7 @@ Para más detalles, consulta [OPTIMIZATIONS.md](OPTIMIZATIONS.md).
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/tu-usuario/diffye-ctf-bot.git
+git clone https://github.com/FrijolitoRaza/DIFFYE-ctf-bot.git
 cd diffye-ctf-bot
 ```
 
@@ -116,7 +116,7 @@ python bot.py
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/tu-usuario/diffye-ctf-bot.git
+git clone https://github.com/FrijolitoRaza/DIFFYE-ctf-bot.git
 cd diffye-ctf-bot
 ```
 
@@ -148,6 +148,7 @@ docker-compose --profile dev up -d
 
 ### Comandos de Admin
 - `/admin_stats` - Ver estadísticas generales (solo admins)
+- `/broadcast` - Enviar mensaje circular (solo admins)
 
 ## 🏁 Flags y Desafíos
 
@@ -156,25 +157,25 @@ Todas las flags siguen el formato: `FLAG{RESPUESTA}`
 
 ### Desafíos Disponibles
 
-1. **Desafío 0 (Tutorial)**: Mensaje Interceptado
+1. **Desafío 0 (Tutorial)**
    - Flag: `FLAG{INICIO_INVESTIGACION}`
    - Disponible: Siempre
 
-2. **Desafío 1**: Análisis de E-commerce
-   - Flag: `FLAG{VENTA_ESTUPEFACIENTES}`
-   - Disponible: Día 1 (15/09)
+2. **Desafío 4**: Redes Sociales
+   - Flag: `FLAG{VILLA_URQUIZA}`
+   - Disponible: Día 4 (18/09)
 
-3. **Desafío 2**: Registros Telefónicos
-   - Flag: `FLAG{CABALLITO}`
-   - Disponible: Día 2 (16/09)
-
-4. **Desafío 3**: Cámaras de Tránsito
+3. **Desafío 3**: Cámaras de Tránsito
    - Flag: `FLAG{TRIUNVIRATO_OLAZABAL}`
    - Disponible: Día 3 (17/09)
 
-5. **Desafío 4**: Redes Sociales
-   - Flag: `FLAG{VILLA_URQUIZA}`
-   - Disponible: Día 4 (18/09)
+4. **Desafío 2**: Registros Telefónicos
+   - Flag: `FLAG{CABALLITO}`
+   - Disponible: Día 2 (16/09)
+
+5. **Desafío 1**: Análisis de E-commerce
+   - Flag: `FLAG{VENTA_ESTUPEFACIENTES}`
+   - Disponible: Día 1 (15/09)
 
 6. **Desafío 5**: La Conexión Final
    - Flag: `FLAG{MAHALO_HERMANOS}`
@@ -200,6 +201,32 @@ END_DATE=2024-09-19
 
 # Timezone
 TIMEZONE=America/Argentina/Buenos_Aires
+
+# Fechas del evento (formato: YYYY-MM-DD)
+START_DATE=2024-09-15
+END_DATE=2024-09-19
+
+# Configuración de logging
+LOG_LEVEL=INFO
+LOG_FILE=logs/bot.log
+
+# Configuración de rate limiting
+RATE_LIMIT_MAX_CALLS=10
+RATE_LIMIT_PERIOD=60
+
+
+# Link de material para desafios
+DESAFIO1= 
+
+DESAFIO2=
+
+DESAFIO3=
+
+DESAFIO4=
+
+DESAFIO5=
+
+IMGFINAL=
 ```
 
 ## 📊 Base de Datos

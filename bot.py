@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-DIFFYE-CTF Bot - Bot de Telegram para CTF de Búsqueda y Captura de Fugitivos
+DIFFYE-CTF Bot - Bot de Telegram para CTF del Curso Búsqueda y Captura de Fugitivos
 Versión completa con keep-alive para UptimeRobot
 """
 
@@ -256,7 +256,7 @@ def track_activity(func):
         return await func(update, context)
     return wrapper
 
-# ==================== DESAFÍOS (MODIFICADO) ====================
+# ==================== DESAFÍOS ====================
 CHALLENGES = {
     0: {
         'title': '🔍 Desafío Tutorial',
@@ -291,7 +291,7 @@ Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`
 💡 Pista: Los fondos de las fotos y los hashtags pueden revelar la ubicación.
 ''',
         'flag': ['FLAG{VILLA_URQUIZA}'],
-        'material_link': 'https://www.instagram.com/gian.francomh/'
+        'material_link': os.getenv('Desafio1')
     },
     2: {
         'title': '🚗 Desafío 2 - Cámaras de Tránsito',
@@ -310,7 +310,7 @@ Formato de respuesta: `FLAG{CALLE}` o `FLAG{CALLE_CALLE}`.
 💡 Pista: Busca cambios en el patrón regular de movimiento.
 ''',
         'flag': ['FLAG{AV_ALVAREZ_THOMAS}'],
-        'material_link': 'https://docs.google.com/spreadsheets/d/1Vb3RNY0fa3pxY-QToCg1zIo539L0jfCG/edit?usp=drive_link&ouid=100147836674076127083&rtpof=true&sd=true'
+        'material_link': os.getenv('Desafio2')
     },
     3: {
         'title': '📞 Desafío 3 - Registros Telefónicos',
@@ -329,7 +329,7 @@ Formato de respuesta: `FLAG{BARRIO}` o `FLAG{BARRIO_BARRIO}`.
 💡 Pista: Las conexiones nocturnas suelen indicar el lugar de residencia.
 ''',
         'flag': ['FLAG{CABALLITO}'],
-        'material_link': 'https://docs.google.com/spreadsheets/d/1iz4hu39zfQT21QBRJudHi7_sHBt8-pCr/edit?usp=drive_link&ouid=100147836674076127083&rtpof=true&sd=true'
+        'material_link': os.getenv('Desafio3')
     },
     4: {
         'title': '📦 Desafío 4 - Análisis de E-commerce',
@@ -348,7 +348,7 @@ Formato de respuesta: `FLAG{ACTIVIDAD}` o `FLAG{ACTIVIDAD_ACTIVIDAD}`.
 💡 Pista: Presta atención a los patrones de compra y las cantidades de ciertos artículos.
 ''',
         'flag': ['FLAG{DROGAS}', 'FLAG{DROGA}', 'FLAG{VENTA_DE_ESTUPEFACIENTES}', 'FLAG{ESTUPEFACIENTES}'],
-        'material_link': 'https://docs.google.com/spreadsheets/d/17stE1_x1FrUj08-oyAcvbDmYe9zB8C6tX_MyANgRF44/edit?usp=drive_link'
+        'material_link': os.getenv('Desafio4')
     },
     5: {
         'title': '🔗 Desafío 5 - La Conexión Final',
@@ -370,7 +370,7 @@ Formato de respuesta: `FLAG{DEPOSITO}` o `FLAG{DEPOSITO_DEPOSITO}`
 💡 Pista: El depósito aparece mencionado en múltiples fuentes.
 ''',
         'flag': ['FLAG{MAHALO_HERMANOS}','FLAG{HERMANOS_MAHALO}','FLAG{MAHALO}'],
-        'material_link': 'https://docs.google.com/spreadsheets/d/1LRWdPC1SgzmW47BWOnnWM0FmI2opxc4T33J5FxQN78w/edit?usp=drive_link'
+        'material_link': os.getenv('Desafio5')
     }
 }
 
@@ -491,7 +491,7 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⚠️ Sesión expirada. Usa /submit de nuevo.")
         return ConversationHandler.END
     
-    # MODIFICACIÓN: Verificar flag contra lista de opciones válidas
+    # Verificar flag contra lista de opciones válidas
     challenge = CHALLENGES[challenge_id]
     flag_list = challenge['flag'] if isinstance(challenge['flag'], list) else [challenge['flag']]
 
@@ -504,7 +504,7 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         if result == 'correct':
-            # MODIFICACIÓN: Verificar si completó todos los desafíos (6to desafío)
+            # Verificar si completó todos los desafíos
             if challenge_id == 5:  # Desafío 5 es el último (índice 5)
                 # Verificar si ahora tiene todos los desafíos completados
                 progress = await Database.get_user_progress(user_id)
@@ -518,11 +518,11 @@ async def process_flag(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     # Primero enviar el texto
                     await update.message.reply_text(congratulations_text, reply_markup=reply_markup)
                                         
-                    # Luego intentar enviar la imagen desde Google Drive
+                    # Luego intentar enviar la imagen
                     try:
                         await context.bot.send_photo(
                             chat_id=update.effective_chat.id,
-                            photo="https://drive.google.com/uc?export=download&id=1NKbaR4tDGRTb25kpwH6DxlL37aAV9tot",
+                            photo=os.os.getenv('IMGFINAL'),
                             caption="🚔 FUGITIVO CAPTURADO 🚔"
                         )
                     except Exception as e:
@@ -606,7 +606,7 @@ async def leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     ranking = await Database.get_leaderboard()
     
-    # MODIFICACIÓN: Ordenar por desafíos completados (desc) y luego por intentos (asc)
+    # Ordenar por desafíos completados (desc) y luego por intentos (asc)
     if ranking:
         ranking.sort(key=lambda x: (-x['challenges_completed'], x['total_attempts']))
     
@@ -707,7 +707,7 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         text += "📈 COMPLETADOS POR DESAFÍO:\n" + "-"*30 + "\n"
         
-        # MODIFICACIÓN: Ordenar estadísticas por ID de desafío
+        # Ordenar estadísticas por ID de desafío
         challenge_stats = sorted(stats['challenge_stats'], key=lambda x: x['challenge_id'])
         
         for stat in challenge_stats:
@@ -716,7 +716,7 @@ async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += f"• {challenge_name}:\n"
             text += f"  Completados: {stat['completions']} usuarios ({completion_rate:.1f}%)\n\n"
         
-        # MODIFICACIÓN: Agregar estadísticas adicionales
+        # Agregar estadísticas adicionales
         if stats.get('completion_stats'):
             text += "🏆 ESTADÍSTICAS DE FINALIZACIÓN:\n" + "-"*30 + "\n"
             text += f"• Usuarios que completaron todos: {stats['completion_stats'].get('all_completed', 0)}\n"
@@ -910,8 +910,6 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)],
         per_message=False
     )
-    
-    # Asegurar que TODOS los manejadores estén registrados
     
     # 1. Comandos
     application.add_handler(CommandHandler("start", start))

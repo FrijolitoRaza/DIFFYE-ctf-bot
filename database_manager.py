@@ -120,7 +120,7 @@ class Database:
     async def init_db():
         """Inicializa las tablas de la base de datos"""
         queries = [
-            # ... (Tus consultas SQL para crear tablas)
+            # ... Consultas SQL para crear tablas
             ('''
                 CREATE TABLE IF NOT EXISTS users (
                     user_id BIGINT PRIMARY KEY,
@@ -239,8 +239,7 @@ class Database:
             if existing:
                 return 'already_completed'
             
-            # Obtener la flag correcta (esto debería venir de una configuración)
-            # Por ahora usamos una lógica simple
+            # Obtener la flag correcta 
             from bot import CHALLENGES
             challenge_flags = CHALLENGES[challenge_id]['flag']
 
@@ -249,7 +248,6 @@ class Database:
                 is_correct = flag.upper() in [f.upper() for f in challenge_flags]
             else:
                 is_correct = challenge_flags.upper() == flag.upper()
-            #is_correct = CHALLENGES[challenge_id]['flag'].upper() == flag.upper()
             
             # Registrar el intento
             await db_manager.execute_command('''
@@ -319,13 +317,15 @@ class Database:
         """Obtiene el ranking de usuarios"""
         try:
             return await db_manager.execute_query('''
-                SELECT u.full_name, s.challenges_completed, s.total_attempts
+
+                SELECT u.full_name, s.challenges_completed, s.total_attempts,
+                        MIN(p.submission_date) as first_completion
                 FROM users u
                 JOIN statistics s ON u.user_id = s.user_id
                 LEFT JOIN progress p ON u.user_id = p.user_id AND p.is_correct = TRUE
                 WHERE s.challenges_completed > 0
                 GROUP BY u.full_name, s.challenges_completed, s.total_attempts
-                ORDER BY s.challenges_completed desc, s.total_attempts asc
+                ORDER BY s.challenges_completed DESC, first_completion ASC
                 LIMIT 10
             ''')
         except Exception as e:
@@ -370,7 +370,7 @@ class Database:
         """Obtiene todos los usuarios registrados para mensajes circulares"""
         try:
             query = "SELECT user_id, username, full_name FROM users WHERE is_active = TRUE ORDER BY registration_date"
-            result = await db_manager.execute_query(query)  # Método correcto
+            result = await db_manager.execute_query(query) 
             return result
         except Exception as e:
             logger.error(f"Error obteniendo todos los usuarios: {e}")
@@ -381,12 +381,7 @@ async def main():
     """Función principal para inicializar y usar el manejador"""
     try:
         await db_manager.initialize()
-        
-        # Aquí puedes llamar a las funciones que usan la base de datos
-        # Por ejemplo:
-        # await Database.init_db()
-        # await Database.register_user(12345, 'testuser', 'Test User')
-        
+                
         logger.info("✅ Pruebas de conexión exitosas y operaciones de ejemplo terminadas.")
     except Exception as e:
         logger.error(f"⚠️ Un error crítico ocurrió: {e}")
